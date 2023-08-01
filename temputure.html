@@ -1,0 +1,864 @@
+<!doctype html>
+<html>
+<head>
+    <title>Temputure</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/animejs@3.0.1/lib/anime.min.js"></script>
+	<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+	<script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+
+	<style>
+        @import url('https://fonts.googleapis.com/css2?family=Bitter&family=Noto+Sans+TC&display=swap');
+        @font-face {
+			font-family: "digi";
+			src: url(fonts/DS-DIGI.TTF) format("opentype");
+		}
+        @font-face {
+			font-family: "digib";
+			src: url(fonts/DS-DIGIB.TTF) format("opentype");
+		}
+
+        *{
+            box-sizing: border-box;
+            font-family: 'Bitter', 'Noto Sans TC', serif;
+            font-size: 20px;
+            color: #fff;
+        }
+		html, body{
+			margin: 0;
+			padding: 0;
+            overflow-x: hidden;
+            /* background-color: #00b4ff; */
+		}
+
+        .container{
+            display: flex;
+            width: 100vw;
+            height: 50vh;
+            flex-wrap: wrap;
+        }
+		.clock{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 50%;
+        }
+        .clock .num{
+            font-size: 300px;
+            line-height: 200px;
+            font-family: "digib";
+            color: #fff;
+            text-align: center;
+            z-index: 1;
+            mix-blend-mode: exclusion;
+        }
+
+        .clock .vdo_bg{
+            background-color: rgba(0,0,0,0.88);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .clock .vdo_bg iframe {
+            width: 100%;
+            height: 100%;
+            transform: scale(1.3);
+            pointer-events: none;
+            position: relative;
+            opacity: 0.3;
+        }
+        .clock .date{
+            font-size: 26px;
+            color: #fff;
+            text-align: center;
+            z-index: 1;
+            width: fit-content;
+            padding: 5px 15px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .clock .date:after{
+            /* content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transform: skew(-4deg);
+            background-color: chartreuse;
+            z-index: -1; */
+        }
+
+        .num{
+            font-family: "digi";
+            font-size: 9vw;
+        }
+        .unit{
+            font-size: 38px;
+        }
+
+        .temp .num{
+            background: linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(0,168,255,1) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 500% 500%;
+            background-position: 0% 50%;
+        }
+        .r{
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            padding: 30px 60px;
+        }
+        .other{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .other > div{
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: left;
+        }
+        .today_rep{
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .fore_b{
+            border-top: 1px solid #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            height: auto;
+            width: 100vw;
+        }
+
+        .weaFORE{
+            display: flex;
+            flex-direction: row;
+            
+            text-align: center;
+        }
+        .weaFORE .fut{
+            padding: 20px;
+            flex: 1;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .weather_of_theday{
+            font-size: 14px;
+        }
+        .weaFORE .fut:not(:last-child){
+            border-right: 0px solid #ccc;
+        }
+        .foreICON img{
+            max-width: 70px;
+            background-color: darkblue;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        @media (max-width: 768px){
+            html{
+                background-color: black;
+            }
+            .container, .fore_b{
+                display: block;
+                width: 100%;
+            }
+            .r, .clock{
+                width: 100%;
+            }
+            .r{
+                padding: 20px;
+            }
+            .clock .num{
+                font-size: 33.33333vw;
+                line-height: normal;
+            }
+            .other{
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+            .other > div{
+                height: auto;
+            }
+            .num {
+                font-size: 50px;
+            }
+            .unit {
+                font-size: 18px;
+            }
+            .other .temp, .other .humi, .other .rain{
+                width: 33.33333%;
+                justify-content: inherit;
+                text-align: center;
+            }
+            .fore_b{
+                margin-top: 20px;
+                padding-top: 20px;
+            }
+            .weaFORE{
+                flex-direction: column;
+                padding: 10px 20px;
+            }
+            .linesec{
+                transform: translateY(-33%) scale(0.5) !important;
+            }
+        }
+
+
+        .flicker-5 {
+            -webkit-animation: flicker-5 2s linear infinite both;
+                    animation: flicker-5 2s linear infinite both;
+        }
+
+        @-webkit-keyframes flicker-5 {
+            0%,
+            50%,
+            100% {
+                opacity: 1;
+            }
+            25%,
+            75% {
+                opacity: 0;
+            }
+                    }
+                    @keyframes flicker-5 {
+                        0%,
+            50%,
+            100% {
+                opacity: 1;
+            }
+            25%,
+            75% {
+                opacity: 0;
+            }
+        }
+
+        .pin_cl{
+            position: relative;
+            top: 60px;
+            transform: scale(3);
+        }
+        .hr_cl:before{
+            content: '12';
+            position: absolute;
+            top: 0;
+            font-size: 9px;
+            left: calc(50% - 4px);
+            color: #fff;
+            filter: none;
+        }
+        .hr_cl:after{
+            content: '6';
+            position: absolute;
+            bottom: 0;
+            font-size: 9px;
+            left: calc(50% - 4px);
+            color: #fff;
+            filter: none;
+        }
+
+        .hand_cl, .hr_cl, .min_cl{
+            position: absolute;
+            margin: 0 auto;
+        }
+        .hand_cl{
+            width: 40px;
+            height: 40px;
+            z-index: 5;
+            top: calc(50% - 20px);
+            left: calc(50% - 20px);
+            background-color: black;
+            mix-blend-mode: plus-lighter;
+        }
+        .hand_cl img{
+            transition: all 0.2s ease;
+            width: 40px;
+            height: 40px;
+        }
+
+        .min_cl{
+            width: 90px;
+            height: 90px;
+            z-index: 4;
+            top: calc(50% - 45px);
+            left: calc(50% - 45px);
+            background-color: #00ff32;
+        }
+        .min_cl img{
+            transition: all 0.2s ease;
+            width: 90px;
+            height: 90px;
+        }
+        .min_cl:before{
+            content: '9';
+            position: absolute;
+            top: calc(50% - 4px);
+            font-size: 9px;
+            left: 10px;
+            color: #fff;
+            filter: none;
+        }
+        .min_cl:after{
+            content: '3';
+            position: absolute;
+            top: calc(50% - 4px);
+            font-size: 9px;
+            right: 10px;
+            color: #fff;
+            filter: none;
+        }
+
+        .hr_cl{
+            width: 70px;
+            height: 70px;
+            z-index: 5;
+            top: calc(50% - 35px);
+            left: calc(50% - 35px);
+            background-color:#00a6ff;
+            mix-blend-mode: difference;
+        }
+        .hr_cl img{
+            transition: all 0.2s ease;
+            width: 70px;
+            height: 70px;
+        }
+
+
+        .notransition {
+            -webkit-transition: none !important;
+            -moz-transition: none !important;
+            -o-transition: none !important;
+            transition: none !important;
+        }
+	</style>
+
+</head>
+
+<script>
+    var date = new Date();
+    var tsYR = date.getFullYear();
+    var tsMO = date.getMonth() + 1;
+    var tsDA = date.getDate();
+    var tsWD = date.getDay();
+    var tsHR = date.getHours();
+    var tsMI = date.getMinutes();
+    var sunstat = 0;
+    var currentTIME = tsHR + ':' + gotoTwoDigi(tsMI);
+    switch(tsWD){
+        case 0:
+            tsWD = 'Sun';
+        break;
+        case 1:
+            tsWD = 'Mon';
+        break;
+        case 2:
+            tsWD = 'Tue';
+        break;
+        case 3:
+            tsWD = 'Wed';
+        break;
+        case 4:
+            tsWD = 'Thu';
+        break;
+        case 5:
+            tsWD = 'Fri';
+        break;
+        case 6:
+            tsWD = 'Sat';
+        break;
+    }
+    switch(tsMO){
+        case 1:
+            tsMO = 'JAN';
+        break;
+        case 2:
+            tsMO = 'FEB';
+        break;
+        case 3:
+            tsMO = 'MAR';
+        break;
+        case 4:
+            tsMO = 'APR';
+        break;
+        case 5:
+            tsMO = 'MAY';
+        break;
+        case 6:
+            tsMO = 'JUN';
+        break;
+        case 7:
+            tsMO = 'JUL';
+        break;
+        case 8:
+            tsMO = 'AUG';
+        break;
+        case 9:
+            tsMO = 'SEP';
+        break;
+        case 10:
+            tsMO = 'OCT';
+        break;
+        case 11:
+            tsMO = 'NOV';
+        break;
+        case 12:
+            tsMO = 'DEC';
+        break;
+    }
+    var combine = tsYR + '-' + tsMO + '-' + gotoTwoDigi(tsDA) + ' ' + tsWD;
+
+    $('.clock .num').html(currentTIME);
+    if(tsHR >= 19 && tsMI >= 30 && tsMI <= 40){
+        //console.log();
+        $('.clock .num').addClass('flicker-5');
+    }else{
+        //console.log('no');
+        $('.clock .num').removeClass('flicker-5');
+    }
+
+    setInterval(function () {
+        date = new Date();
+        tsYR = date.getFullYear();
+        tsMO = date.getMonth() + 1;
+        tsDA = date.getDate();
+
+        tsHR = date.getHours();
+        tsMI = date.getMinutes();
+        currentTIME = tsHR + ':' + gotoTwoDigi(tsMI);
+        switch(tsWD){
+            case 0:
+                tsWD = 'Sun';
+            break;
+            case 1:
+                tsWD = 'Mon';
+            break;
+            case 2:
+                tsWD = 'Tue';
+            break;
+            case 3:
+                tsWD = 'Wed';
+            break;
+            case 4:
+                tsWD = 'Thu';
+            break;
+            case 5:
+                tsWD = 'Fri';
+            break;
+            case 6:
+                tsWD = 'Sat';
+            break;
+        }
+        switch(tsMO){
+            case 1:
+                tsMO = 'JAN';
+            break;
+            case 2:
+                tsMO = 'FEB';
+            break;
+            case 3:
+                tsMO = 'MAR';
+            break;
+            case 4:
+                tsMO = 'APR';
+            break;
+            case 5:
+                tsMO = 'MAY';
+            break;
+            case 6:
+                tsMO = 'JUN';
+            break;
+            case 7:
+                tsMO = 'JUL';
+            break;
+            case 8:
+                tsMO = 'AUG';
+            break;
+            case 9:
+                tsMO = 'SEP';
+            break;
+            case 10:
+                tsMO = 'OCT';
+            break;
+            case 11:
+                tsMO = 'NOV';
+            break;
+            case 12:
+                tsMO = 'DEC';
+            break;
+        }
+        combine = tsYR + '-' + tsMO + '-' + gotoTwoDigi(tsDA) + ' ' + tsWD;
+
+        $('.clock .num').html(currentTIME);
+        if(tsHR >= 19 && tsMI >= 30 && tsMI <= 40){
+            //console.log();
+            $('.clock .flash').addClass('flicker-5');
+        }else{
+            //console.log('no');
+            $('.clock .flash').removeClass('flicker-5');
+        }
+    }, 1000);
+
+	function gotoTwoDigi(n){
+		return (n < 10 ? "0" : "") + n;
+	}
+	var jsonlocate = 'https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&year=' + tsYR +'&rformat=json';
+
+	$(document).ready(function() {
+    
+    $('.clock .date').html(combine);
+
+	// $.getJSON(jsonlocate, function(veu) {
+	// 	var d_arr = veu.data;
+	// 	for (var i = 0; i < d_arr.length; i++) {
+	// 		//console.log(d_arr[i][0] + '_'+ combine );
+	// 		if(d_arr[i][0] == combine){
+	// 			//console.log(d_arr[i][0]);//today
+	// 			// console.log(d_arr[i][1]);//sunrise
+	// 			// console.log(d_arr[i][2]);//suntran
+	// 			// console.log(d_arr[i][3]);//sunset
+				
+	// 			//console.log(currentTIME+'__');
+	// 			if(currentTIME >= d_arr[i][1] && currentTIME <= d_arr[i][1]){
+	// 				sunstat = 0;
+	// 			}
+	// 			if(currentTIME >= d_arr[i][2]){
+	// 				sunstat = 1;
+	// 			}
+	// 			if(currentTIME >= d_arr[i][3]){
+	// 				sunstat = 2;
+	// 			}
+	// 			switch (sunstat) {
+	// 			case 0:
+	// 				$('.daynight img').removeClass('show');
+	// 				$('.day').addClass('show');
+	// 				break;
+	// 			case 1:
+	// 				$('.daynight img').removeClass('show');
+	// 				$('.day').addClass('show');
+	// 				break;
+	// 			case 2:
+	// 				$('.daynight img').removeClass('show');
+	// 				$('.night').addClass('show');
+	// 				break;
+	// 			}
+	// 		}
+	// 	}
+	// });
+
+        var hkweather = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en';
+        $.getJSON(hkweather, function(hkw) {
+            var hkw_j = hkw.temperature;
+            var hkw_rain = hkw.rainfall;
+            var hkw_humi = hkw.humidity;
+            //console.log(hkw_j.data[1].place + ':' + hkw_j.data[1].value);
+            displayWEA(hkw_j, hkw_rain, hkw_humi);
+            setInterval(function () {
+                displayWEA(hkw_j, hkw_rain, hkw_humi);
+            }, 600000);
+        });
+
+        function displayWEA(hkw_j, hkw_rain, hkw_humi){
+            $('.other .temp .locat').html(hkw_j.data[1].place);
+            $('.other .temp .num').html(hkw_j.data[1].value);
+            var hotTEMP = 38;
+            var coldTEMP = 13;
+            var tempcolorY = ((hotTEMP - hkw_j.data[1].value)/(hotTEMP - coldTEMP))*100;
+            $('.other .temp .num').css('background-position', '0%' + tempcolorY + '%');
+            $('.other .temp .unit').html('°' + hkw_j.data[1].unit);
+            $('.other .humi .num').html(hkw_humi.data[0].value);
+            $('.other .humi .num').css('color','rgba(114,190,255,0.' + hkw_humi.data[0].value + ')');
+            $('.other .rain .locat').html(hkw_rain.data[14].place);//14=ssp
+            $('.other .rain .num').html(hkw_rain.data[14].max);
+            $('.other .rain .num').css('color','rgba(114,190,255,' + (hkw_rain.data[14].max * 0.1) + ')');
+            $('.other .rain .unit').html(hkw_rain.data[14].unit);
+        }
+        
+        var hkw_today_rep = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc';
+        $.getJSON(hkw_today_rep, function(hkw_today) {
+            var hkw_td_forecastPeriod = hkw_today.forecastPeriod;
+            var hkw_td_forecastDesc = hkw_today.forecastDesc;
+            var hkw_td_outlook = hkw_today.outlook;
+            var td_rep = '<strong>' + hkw_td_forecastPeriod + '</strong><br>' + hkw_td_forecastDesc + hkw_td_outlook;
+            $('.today_rep').html(td_rep);
+            setInterval(function () {
+                $('.today_rep').html(td_rep);
+            }, 600000);
+        });
+
+        var hkw_fur9 = 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc';
+        $.getJSON(hkw_fur9, function(hkw9) {
+            var hkw_weaFur = hkw9.weatherForecast;
+            var hkw_generalSituation = hkw9.generalSituation;
+            var willwrite = '';
+            for (var i = 0; i < hkw_weaFur.length; i++) {
+                willwrite = willwrite + '<div class="fut">' + hkw_weaFur[i].forecastDate + '<div class="day_of_week">' + hkw_weaFur[i].week + '</div><div class="foreICON"><img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic' + hkw_weaFur[i].ForecastIcon +  '.png"></div><div class="weather_of_theday">' + hkw_weaFur[i].forecastWeather + '</div><div class="temp_of_theday">' + hkw_weaFur[i].forecastMintemp.value + '°' + hkw_weaFur[i].forecastMaxtemp.unit + '-' + hkw_weaFur[i].forecastMaxtemp.value + '°' + hkw_weaFur[i].forecastMaxtemp.unit + '</div></div>';
+            }
+            $('.weaFORE').html(willwrite);
+            $('.genSit').html(hkw_generalSituation);
+            setInterval(function () {
+                willwrite = ''
+                for (var i = 0; i < hkw_weaFur.length; i++) {
+                    willwrite = willwrite + '<div class="fut">' + hkw_weaFur[i].forecastDate + '<div class="day_of_week">' + hkw_weaFur[i].week + '</div><div class="foreICON"><img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic' + hkw_weaFur[i].ForecastIcon +  '.png"></div><div class="weather_of_theday">' + hkw_weaFur[i].forecastWeather + '</div><div class="temp_of_theday">' + hkw_weaFur[i].forecastMintemp.value + '°' + hkw_weaFur[i].forecastMaxtemp.unit + '-' + hkw_weaFur[i].forecastMaxtemp.value + '°' + hkw_weaFur[i].forecastMaxtemp.unit + '</div></div>';
+                }
+                $('.weaFORE').html(willwrite);
+                $('.genSit').html(hkw_generalSituation);
+            }, 600000);
+        });
+
+        // //1823_holiday
+        // var hkholiday_1823 = 'https://www.1823.gov.hk/common/ical/tc.json';
+        // $.getJSON(hkholiday_1823, function(hkho_1823) {
+        //     console.log('sdfngkjdf' + hkho_1823);
+        // });
+
+
+        //pin clock
+        var hand_sec = date.getSeconds();
+        var display_sec = hand_sec*6;
+        var display_min = gotoTwoDigi(tsMI)*6;
+        var display_hr = (tsHR % 12)*30 + (gotoTwoDigi(tsMI)*0.5);
+        //console.log(display_hr + '_' + (tsHR % 12)*30);        
+        $('.hand_cl img').css('transform', 'rotate(' + display_sec + 'deg)' );
+        $('.min_cl img').css('transform', 'rotate(' + display_min + 'deg)' );
+
+        $('.hr_cl img').css('transform', 'rotate(' + display_hr + 'deg)' );
+
+        setInterval(function () {
+            //sec
+            display_sec = display_sec + 6;
+            $('.hand_cl img').css('transform', 'rotate(' + display_sec + 'deg)' );
+            // display_min = gotoTwoDigi(tsMI)*6;
+            // $('.min_cl img').css('transform', 'rotate(' + display_min + 'deg)' );
+
+            var new_sec = date.getSeconds();
+            var new_min = date.getMinutes();
+            if(new_sec == 0){
+                //min    
+                display_min = display_min + 6;
+                $('.min_cl img').css('transform', 'rotate(' + display_min + 'deg)' );
+                //hr
+                display_hr = display_hr + 0.5;//each 60sec + 0.5deg, 0.5deg * 60min = 30deg(5mins, 1quad)
+                $('.hr_cl img').css('transform', 'rotate(' + display_hr + 'deg)' );    
+            }
+        }, 975);
+
+
+        //svg path sec
+        var path_rad = 2 * $('.path').attr('r') * Math.PI;//radius of circle,2*r*PI
+        var svg_sec = path_rad - (hand_sec*(path_rad/60));
+        $('.path').css('stroke-dasharray', path_rad );
+        $('.path').css('stroke-dashoffset', svg_sec );
+        
+        setInterval(function () {
+            hand_sec = date.getSeconds();
+            svg_sec = path_rad - (hand_sec*(path_rad/60));
+            $('.path').css('stroke-dashoffset', svg_sec);
+        }, 10);
+
+        // var path_rad = 2 * $('.path').attr('r') * Math.PI;//radius of circle,2*r*PI
+        // var svg_sec = path_rad - (hand_sec*(path_rad/60));
+        // $('.path').css('stroke-dashoffset', svg_sec );
+        // $('.path').css('stroke-dasharray', path_rad );
+        // setInterval(function () {
+        //     svg_sec = svg_sec - ((path_rad/60)/100);
+        //     $('.path').css('stroke-dashoffset', svg_sec);
+        //     if(svg_sec <= ((path_rad/60)/100)){svg_sec = path_rad;}
+        // }, 10);
+    
+    });
+
+
+</script>
+<script>
+// Wait for the page to finish loading
+window.addEventListener('load', () => {
+  // Calculate the percentage of the page that has been loaded
+  const percentageLoaded = Math.floor((window.performance.timing.domContentLoadedEventEnd / window.performance.timing.domInteractive) * 100);
+  
+  …
+});
+</script>
+<script>
+const options = {
+// Required: API key
+key: 'ZtdZ3paYJ56VKOMNHWPdrlvZb3UcXNWf', // REPLACE WITH YOUR KEY !!!
+// Put additional console output
+verbose: true,
+// Optional: Initial state of the map
+lat: 22.315,
+lon: 114.151,
+zoom: 11,
+};
+
+// Initialize Windy API
+windyInit(options, windyAPI => {
+// windyAPI is ready, and contain 'map', 'store',
+// 'picker' and other usefull stuff
+const { map } = windyAPI;
+// .map is instance of Leaflet map
+
+L.popup()
+    // .setLatLng([22.315, 114.151])
+    // .setContent('Hello World')
+    .openOn(map);
+});
+</script>
+
+<body>
+
+<div class="container">
+    <div class="clock">
+        <div class="date"></div>
+        <div class="flash" style="position: relative;">
+            <div class="num">88:88</div>
+            <div class="linesec" style="position: absolute; top: 20px; left: calc(50% - 200px); transform: translateY(-33%); z-index: 4;">
+                <svg id="Layer_1" x="0px" y="0px"
+                viewBox="0 0 300 300" style="enable-background:new 0 0 300 300; height: 400px; width: 400px; transform: rotate(-90deg);" xml:space="preserve">
+                <style type="text/css">
+                .st0{fill:none; stroke:rgb(246, 255, 0); stroke-miterlimit:10; stroke-width: 5px;}
+                .st1{fill:none; stroke:rgba(0, 0, 0, 0.15); stroke-miterlimit:10; stroke-width: 3px;}
+                .path {
+                    transition: all 1s linear;
+                    filter: drop-shadow(0px 0px 2px rgb(246 255 0 / 0.6));
+                    /*animation: dash 0.3s linear alternate infinite;*/
+                }
+                </style>
+                <circle class="st0 path" cx="150" cy="150" r="120"/>
+                <circle class="st1" cx="150" cy="150" r="120"/>
+                </svg>
+            </div>
+        </div>
+        <!-- <div class="vdo_bg">
+            <iframe id="ytplayer" type="text/html" src="https://www.youtube.com/embed/o9hxocy3U3U?mute=1&loop=1&autoplay=1&list=PLLHwyPD75MDepWppXFCzgLUSBQ9CPeovX" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div> -->
+        <div class="vdo_bg">
+            <iframe id="ytplayer" type="text/html" src="https://www.youtube.com/embed/CVTTn7Q1v64?mute=1&loop=1&autoplay=1" frameborder="0"></iframe>
+        </div>
+
+    </div>
+    <div class="r">
+        <div class="other">
+            <div class="temp">
+                <div class="locat"></div>
+                <div><span class="num"></span><span class="unit"></span></div>
+            </div>
+            <div class="humi">
+                <div class="locat">Humidity</div>
+                <div><span class="num"></span><span class="unit">%</span></div>
+            </div>
+            <div class="rain">
+                <div class="locat"></div>
+                <div><span class="num" style="background-color: white; -webkit-background-clip: text;"></span><span class="unit"></span></div>
+            </div>
+        </div>
+        <div class="today_rep"></div>
+    </div>
+    
+</div>
+<!-- 
+<div class="holiday">
+    <div class="date"></div>
+</div> -->
+
+<div class="fore_b">
+    <div class="genSit" style="text-align: center; font-size: 16px; padding: 20px 0;"></div>
+    <div class="weaFORE"></div>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <div class="pin_cl">
+        <div class="hr_cl">
+            <img src="https://ares.locusin.com/din-test/10_article/images/skeleton-middle-finger.svg">
+        </div>
+        <div class="min_cl">
+            <img src="https://ares.locusin.com/din-test/10_article/images/skeleton-middle-finger.svg">
+        </div>
+        <div class="hand_cl">
+            <img src="https://ares.locusin.com/din-test/10_article/images/skeleton-middle-finger.svg">
+        </div>
+    </div>
+    <p>&nbsp;</p>
+
+</div>
+
+<style>
+    #windy {
+        display: block;
+        width: 100%;
+        height: 600px;
+        margin-top: 200px;
+    }
+</style>
+<div id="windy"></div>
+
+<p>&nbsp;</p>
+<style>
+    .ttvB{
+        background-color: #5c16c5;
+        padding: 5px;
+        color: #fff;
+        border-radius: 4px;
+        margin: 5px;
+        cursor: pointer;
+    }
+</style>
+
+<div>
+    <h2>FOOD & DRINK</h2>
+    <a class="ttvB" onclick="changeCHANNEL('foodvids')">foodvids</a>    
+    <a class="ttvB" onclick="changeCHANNEL('roadtomadeiralive')">roadtomadeiralive</a>    
+    <a class="ttvB" onclick="changeCHANNEL('hungry')">hungry</a>    
+</div>
+<div>
+    <h2>RADIO</h2>
+    <a class="ttvB" onclick="changeCHANNEL('urbanaplay')">urbanaplay</a>
+    <a class="ttvB" onclick="changeCHANNEL('icrt')">icrt</a>
+    <a class="ttvB" onclick="changeCHANNEL('cineconcerts')">cineconcerts</a>
+</div>
+<div>
+    <h2>EDM</h2>
+    <a class="ttvB" onclick="changeCHANNEL('spinninrecords')">spinninrecords</a>
+    <a class="ttvB" onclick="changeCHANNEL('insomniac')">insomniac</a>
+    <a class="ttvB" onclick="changeCHANNEL('asot')">asot</a>
+</div>
+
+<p style="margin-bottom: 10px;">&nbsp;</p>
+<!-- Add a placeholder for the Twitch embed -->
+<div id="twitch-embed"></div>
+<!-- Load the Twitch embed JavaScript file -->
+<script src="https://embed.twitch.tv/embed/v1.js"></script>
+<!-- Create a Twitch.Embed object that will render within the "twitch-embed" element -->
+<script type="text/javascript">
+   var ttv = new Twitch.Embed("twitch-embed", {
+    width: '100%',
+    height: 768,
+    channel: "spinninrecords",
+    parent: ["ares.locusin.com"]
+  });
+function changeCHANNEL(channel){
+    var player = ttv.getPlayer();
+    player.setChannel(channel);
+}
+</script>
+
+
+</body>
+</html>
